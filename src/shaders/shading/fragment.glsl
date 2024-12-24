@@ -6,9 +6,11 @@ varying vec3 vPosition;
 #include ../includes/ambientLight.glsl
 #include ../includes/directionalLight.glsl
 
-vec3 pointLight(vec3 lightColor, float lightIntensity, vec3 normal, vec3 lightPosition, vec3 viewDirection, float specularPower)
+vec3 pointLight(vec3 lightColor, float lightIntensity, vec3 normal, vec3 lightPosition, vec3 viewDirection, float specularPower, vec3 position, float lightDecay)
 {
-    vec3 lightDirection = normalize(lightPosition);
+    vec3 lightDelta = lightPosition - position;
+    float lightDistance = length(lightDelta);
+    vec3 lightDirection = normalize(lightDelta);
     vec3 lightReflection = reflect(-lightDirection, normal);
 
     // Shading
@@ -20,7 +22,10 @@ vec3 pointLight(vec3 lightColor, float lightIntensity, vec3 normal, vec3 lightPo
     specular = max(0.0, specular);
     specular = pow(specular, specularPower);
 
-    return lightColor * lightIntensity * (shading + specular);
+    // Decay
+    float decay = 1.0 - lightDistance * lightDecay;
+
+    return lightColor * lightIntensity * decay * (shading + specular);
 }
 
 void main()
@@ -46,8 +51,9 @@ void main()
     normal,              // Normal
     vec3(0.0, 2.5, 0.0), // Light position
     viewDirection,       // View direction
-    20.0                 // Specular power
-    );
+    20.0,                // Specular power
+    vPosition,           // Position
+    0.3);                // Light decay
     color *= light;
 
     // Final color
